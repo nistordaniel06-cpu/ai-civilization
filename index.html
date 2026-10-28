@@ -40,8 +40,8 @@ function ensureFirms(){if(!Array.isArray(s.firms))s.firms=[];let existing=new Se
 function ensureGovernment(){if(!s.government)s.government={tax:3,policy:'balanced',investment:0};return s.government}
 
 function demographics(){if(!s.demography)s.demography={births:0,immigration:0,emigration:0,deaths:0,lastYear:s.year};let d=s.demography,capacity=n('house')*35,workplaces=Object.entries(jobCapacity).reduce((sum,[type,slots])=>sum+n(type)*slots,0),happiness=s.economy?.happiness??70,room=Math.max(0,capacity-s.pop),jobsAvailable=Math.max(0,workplaces-s.pop),food=n('farm')*60;
- if(s.day%15===0){let arrivals=Math.min(room,jobsAvailable,Math.max(0,Math.floor((happiness-45)/20)));if(food<s.pop)arrivals=0;if(arrivals>0){s.pop+=arrivals;d.immigration+=arrivals;note('Au sosit '+arrivals+' locuitori atrași de oportunități.')}} 
- if(s.day%30===0){let births=(happiness>=55&&food>=s.pop&&s.pop<capacity)?Math.min(capacity-s.pop,Math.max(1,Math.floor(s.pop/90))):0;if(births>0){s.pop+=births;d.births+=births;note('S-au născut '+births+' copii în oraș.')}}
+ if(s.day%15===0){let arrivals=Math.min(room,jobsAvailable,Math.max(0,Math.floor((happiness-45)/20)));if(food<s.pop)arrivals=0;if(arrivals>0){s.pop+=arrivals;d.pendingImmigrants=(d.pendingImmigrants||0)+arrivals;d.immigration+=arrivals;note('Au sosit '+arrivals+' locuitori atrași de oportunități.')}} 
+ if(s.day%30===0){let births=(happiness>=55&&food>=s.pop&&s.pop<capacity)?Math.min(capacity-s.pop,Math.max(1,Math.floor(s.pop/90))):0;if(births>0){s.pop+=births;d.pendingBirths=(d.pendingBirths||0)+births;d.births+=births;note('S-au născut '+births+' copii în oraș.')}}
  if(s.day%30===0&&(happiness<45||s.pop>capacity||food<s.pop)){let departures=Math.min(s.pop-1,Math.max(1,Math.ceil(s.pop/55)));if(departures>0){s.pop-=departures;d.emigration+=departures;note('Au plecat '+departures+' locuitori din cauza condițiilor.')}} 
  if(s.day===1&&s.year>1){let deaths=Math.min(s.pop-1,Math.floor(s.pop/170));if(deaths>0){s.pop-=deaths;d.deaths+=deaths;note('Schimbare demografică anuală: '+deaths+' decese.')}}}
 function save(){try{s.revision=(Number(s.revision)||0)+1;localStorage.setItem('aiciv-save',JSON.stringify(s))}catch(e){}}
@@ -77,7 +77,7 @@ const jobTypes={farm:'Agricultor',factory:'Muncitor',school:'Profesor',power:'El
 const jobCapacity={farm:16,factory:24,school:12,power:8,lab:10};
 function ensureCitizens(){
  if(!Array.isArray(s.citizens))s.citizens=[];
- while(s.citizens.length<s.pop){let i=s.citizens.length;s.citizens.push({id:i,name:firstNames[i%firstNames.length]+' '+surnames[Math.floor(i/firstNames.length)%surnames.length],age:18+(i*13)%48,education:0,family:Math.floor(i/3),car:i%4===0,home:i%Math.max(1,n('house')),wallet:100,job:null,phase:(i*17)%100/100})}
+ while(s.citizens.length<s.pop){let i=s.citizens.length,d=s.demography||{},isBaby=(d.pendingBirths||0)>0;if(isBaby)d.pendingBirths--;else if((d.pendingImmigrants||0)>0)d.pendingImmigrants--;s.citizens.push({id:i,name:firstNames[i%firstNames.length]+' '+surnames[Math.floor(i/firstNames.length)%surnames.length],age:isBaby?0:18+(i*13)%48,education:0,family:isBaby?Math.floor(i/3):Math.floor(i/3),car:!isBaby&&i%4===0,home:i%Math.max(1,n('house')),wallet:isBaby?0:100,job:null,phase:(i*17)%100/100})}
  if(s.citizens.length>s.pop)s.citizens.length=s.pop;
  for(let a of s.citizens){if(!Number.isFinite(a.wallet))a.wallet=100;if(!Number.isFinite(a.education))a.education=0;if(!Number.isFinite(a.family))a.family=Math.floor(a.id/3);if(!Number.isFinite(a.age))a.age=18}
  let slots=[];let workplaces=s.buildings.filter(b=>jobCapacity[b.type]);let remaining=workplaces.map(b=>({type:b.type,left:jobCapacity[b.type]}));while(remaining.some(b=>b.left>0)){for(let b of remaining)if(b.left>0){slots.push(b.type);b.left--}}
