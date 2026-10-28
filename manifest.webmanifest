@@ -1,12 +1,12 @@
 {
-  "name": "AI Civilization — Autonomous Living City",
-  "short_name": "AI Civilization",
+  "name": "Smart City 🌆",
+  "short_name": "Smart City",
   "start_url": "./?source=pwa",
   "scope": "./",
   "display": "standalone",
   "background_color": "#0b151d",
   "theme_color": "#101820",
-  "description": "Simulare autonomă de civilizație, cu Governor OS și progres local.",
+  "description": "Smart City 🌆 — metropolă futuristă 3D, economie și guvernator sincronizate.",
   "icons": [
     {
       "src": "./icon.svg",
