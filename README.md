@@ -11,6 +11,12 @@ Open the GitHub Pages URL after enabling Pages for main / root, or open index.ht
 - Isometric city, event log, speed controls, pause and local save
 - Runs offline without API keys
 
+## V2 — Citizen simulation
+- Named citizens with age, home assignment and deterministic job allocation
+- Employment and unemployment dashboard
+- Visual commuter dots and vehicle markers (not yet pathfinding or car sprites)
+- Citizens persisted in local saves
+
 ## Limitations
 This is an early playable simulation, **not yet** LLM-powered agents or a native Android APK. The city progresses only while the page is open.
 
