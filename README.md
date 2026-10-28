@@ -30,3 +30,26 @@ This is an early playable simulation, **not yet** LLM-powered agents or a native
 
 ## Security
 Never commit API keys or brokerage credentials. Keep simulated game currency separate from real funds.
+
+
+## Product direction — V4.1 (October 2026)
+
+Three separate mobile-first pages:
+- `index.html`: autonomous city, population, companies, labor market, happiness, economy, routes and local saves.
+- `governor.html`: Governor OS, policies, ministry allocations, project approvals, transparent advisor and decision history.
+- `roadmap.html`: public development roadmap and completed milestones.
+
+### Simulation principles
+- The game remains **offline-first**, rule-driven, and does not pretend to use external LLMs.
+- The Governor can override selected public policies and approve discretionary construction; city automation continues otherwise.
+- Saves are browser-local (`localStorage`, key `aiciv-save`). No login, backend persistence or device synchronization yet.
+- A revision counter helps reconcile Governor changes with the live city tab; simultaneous writes may still race and require a transactional backend in a future version.
+- Private companies, payroll and consumption are currently **simplified indicators**, not a complete double-entry economy.
+- Real-world financial transactions, trading and external actions are not enabled; any future capability requires explicit approval and controls.
+
+### Next engineering priorities
+1. Extract the simulation into testable modules, introduce save migrations and automated tests.
+2. Add households, citizen wallets, real agent-to-agent transactions and economic balancing.
+3. Add persistent connected road network, route caching, vehicle sprites and building inspection.
+4. Introduce ministerial proposals with traceable reasons, budgets and audit trails.
+5. Add optional LLM agents with strict token budgets, simulation-only permissions and deterministic fallback.
