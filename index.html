@@ -53,8 +53,8 @@ let workingAge=s.citizens.filter(a=>a.age>=18&&a.age<70).length,employed=Math.mi
 let marketFirms=firms.filter(f=>f.sector==='farm'||f.sector==='factory');let marketPrice=Math.max(2,Math.min(12,Math.round(3+s.pop/Math.max(25,n('farm')*70))));let sales=0;
 let bySector={};for(let firm of firms)(bySector[firm.sector]??=[]).push(firm);
 for(let firm of firms){firm.employees=0;firm.capital=Math.max(0,Number(firm.capital)||0)}
-let sectorIndex={};for(let a of s.citizens){if(a.job&&bySector[a.job]?.length){let group=bySector[a.job],firm=group[(sectorIndex[a.job]||0)%group.length];sectorIndex[a.job]=(sectorIndex[a.job]||0)+1;firm.employees++;let salary=Math.min(9,firm.capital);firm.capital-=salary;a.wallet+=salary;wages+=salary;if(salary>0)paid++}
-let buyer=marketFirms.length?marketFirms[(a.id+s.day)%marketFirms.length]:null;let spend=buyer?Math.min(a.wallet,marketPrice):0;if(spend>=marketPrice){a.wallet-=spend;buyer.capital+=spend;consumption+=spend;purchases++;sales++}}
+let sectorIndex={};for(let a of s.citizens){if(a.job&&bySector[a.job]?.length){let group=bySector[a.job],firm=group[(sectorIndex[a.job]||0)%group.length];sectorIndex[a.job]=(sectorIndex[a.job]||0)+1;firm.employees++;let salary=Math.min(9+Math.floor((a.education||0)/35),firm.capital);firm.capital-=salary;a.wallet+=salary;wages+=salary;if(salary>0)paid++}
+if(a.job)a.experience=Math.min(10000,(a.experience||0)+1);let buyer=marketFirms.length?marketFirms[(a.id+s.day)%marketFirms.length]:null;let spend=buyer?Math.min(a.wallet,marketPrice):0;if(spend>=marketPrice){a.wallet-=spend;buyer.capital+=spend;consumption+=spend;purchases++;sales++}}
 for(let firm of firms){let production=firm.employees*(firm.sector==='farm'?10:firm.sector==='factory'?11:5);firm.capital+=production}
 s.transactions={paid,purchases,savings:s.citizens.reduce((sum,a)=>sum+a.wallet,0),sales,marketPrice,wages};
 s.households={count:Math.max(1,Math.ceil(s.citizens.length/3)),averageSavings:Math.round(s.citizens.reduce((sum,a)=>sum+a.wallet,0)/Math.max(1,Math.ceil(s.citizens.length/3)))};
@@ -66,7 +66,7 @@ if(s.day%30===0){let sentiment=happiness>=75?'optimistă':happiness>=50?'prudent
 
 // Population changes are exclusively managed by demographics().
 if(s.day%(ensureGovernment().policy==='growth'?6:9)===0)build();
-if(s.day%15===0&&n('lab')){s.tech+=n('lab')*(ensureGovernment().policy==='research'?4:2);note('Cercetătorii dezvoltă tehnologii. Nivel '+s.tech+'.')}
+if(s.day%15===0&&n('lab')){let experts=s.citizens.filter(a=>a.job==='lab'&&a.education>=70).length,progress=n('lab')*(ensureGovernment().policy==='research'?4:2)+Math.floor(experts/4);s.tech+=progress;note('Cercetătorii dezvoltă tehnologii. +'+progress+' puncte; nivel '+s.tech+'.');if(s.tech>=50&&!(s.discoveries||[]).includes('Automatizare')){s.discoveries=[...(s.discoveries||[]),'Automatizare'];note('Descoperire: Automatizare!')}}
 if(s.day%30===0)note('Raport: '+s.pop+' locuitori, '+Math.min(s.pop,jobs)+' angajați.');
 save();render()}
 function poly(a,color){ctx.beginPath();ctx.moveTo(...a[0]);for(let i=1;i<a.length;i++)ctx.lineTo(...a[i]);ctx.closePath();ctx.fillStyle=color;ctx.fill();ctx.strokeStyle='#25463a';ctx.stroke()}
@@ -81,7 +81,7 @@ function ensureCitizens(){
  if(s.citizens.length>s.pop)s.citizens.length=s.pop;
  for(let a of s.citizens){if(!Number.isFinite(a.wallet))a.wallet=100;if(!Number.isFinite(a.education))a.education=0;if(!Number.isFinite(a.family))a.family=Math.floor(a.id/3);if(!Number.isFinite(a.age))a.age=18;if(!Number.isFinite(a.experience))a.experience=0}
  let slots=[];let workplaces=s.buildings.filter(b=>jobCapacity[b.type]);let remaining=workplaces.map(b=>({type:b.type,left:jobCapacity[b.type]}));while(remaining.some(b=>b.left>0)){for(let b of remaining)if(b.left>0){slots.push(b.type);b.left--}}
- for(let i=0;i<s.citizens.length;i++){let a=s.citizens[i];a.job=a.age>=18&&a.age<70?(slots[i]||null):null;a.home=a.family%Math.max(1,n('house'))}
+ let eligible=s.citizens.filter(a=>a.age>=18&&a.age<70).sort((a,b)=>(b.education||0)-(a.education||0));for(let a of s.citizens){a.job=null;a.home=a.family%Math.max(1,n('house'))}for(let i=0;i<eligible.length;i++)eligible[i].job=slots[i]||null;
 }
 
 // V3: route citizens on walkable grid cells; buildings block passage.
