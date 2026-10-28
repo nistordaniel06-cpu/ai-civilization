@@ -61,13 +61,13 @@ s.households={count:Math.max(1,Math.ceil(s.citizens.length/3)),averageSavings:Ma
 let income=employed*18+s.pop*g.tax,expenses=s.pop*6+s.buildings.length*20+policyCost;
 let happiness=Math.max(0,Math.min(100,Math.round(70-unemployed/Math.max(1,workingAge)*65-g.tax*2+n('school')*3+n('farm')*2+(g.policy==='welfare'?12:0))));
 s.economy={income,expenses,employment:employed,unemployment:unemployed,happiness,flow:income-expenses,wages,consumption,firms:firms.length};
-s.money+=Math.round(income-expenses);if(!Array.isArray(s.history))s.history=[];s.history.push({year:s.year,day:s.day,money:Math.round(s.money),pop:s.pop,happiness});if(s.history.length>60)s.history=s.history.slice(-60);
+s.money+=Math.round(income-expenses);if(!Array.isArray(s.history))s.history=[];let stamp=s.year*120+s.day;let previous=s.history[s.history.length-1];if(previous&&(previous.year*120+previous.day)>=stamp){s.history=[];note('Istoricul graficului a fost reluat după schimbarea cronologiei.')}s.history.push({year:s.year,day:s.day,money:Math.round(s.money),pop:s.pop,happiness});if(s.history.length>60)s.history=s.history.slice(-60);
 if(s.day%30===0){let sentiment=happiness>=75?'optimistă':happiness>=50?'prudentă':'nemulțumită';note('Societatea este '+sentiment+'. Fericire '+happiness+'/100, șomaj '+unemployed+'.')}
 
 // Population changes are exclusively managed by demographics().
 if(s.day%(ensureGovernment().policy==='growth'?6:9)===0)build();
 if(s.day%15===0&&n('lab')){let experts=s.citizens.filter(a=>a.job==='lab'&&a.education>=70).length,progress=n('lab')*(ensureGovernment().policy==='research'?4:2)+Math.floor(experts/4);s.tech+=progress;note('Cercetătorii dezvoltă tehnologii. +'+progress+' puncte; nivel '+s.tech+'.');if(s.tech>=50&&!(s.discoveries||[]).includes('Automatizare')){s.discoveries=[...(s.discoveries||[]),'Automatizare'];note('Descoperire: Automatizare!')}}
-if(s.day%30===0)note('Raport: '+s.pop+' locuitori, '+Math.min(s.pop,jobs)+' angajați.');
+if(s.day%30===0)note('Raport: '+s.pop+' locuitori, '+employed+' angajați.');
 save();render()}
 function poly(a,color){ctx.beginPath();ctx.moveTo(...a[0]);for(let i=1;i<a.length;i++)ctx.lineTo(...a[i]);ctx.closePath();ctx.fillStyle=color;ctx.fill();ctx.strokeStyle='#25463a';ctx.stroke()}
 // V2: individual persistent citizens with work assignments and daily commutes.
