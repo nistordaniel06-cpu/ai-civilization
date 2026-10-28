@@ -5,7 +5,7 @@
 <div class="stats"><div class="stat">Locuitori<b id="pop">100</b></div><div class="stat">Buget<b id="money">1000k</b></div><div class="stat">Clădiri<b id="count">2</b></div><div class="stat">An / Zi<b id="date">1 / 1</b></div></div>
 <canvas id="city" width="720" height="550"></canvas>
 <div class="controls"><button id="pause">Pauză</button><button id="speed">Viteză ×1</button><button id="save">Salvează</button><button id="reset">Reset</button></div>
-<section><h2>🧠 Jurnalul civilizației</h2><div class="feed" id="feed"></div></section><footer>Simulare autonomă offline bazată pe reguli, nu pe modele AI externe. Evoluează cât timp pagina este deschisă. Progresul se salvează local.</footer>
+<section><h2>👥 Cetățeni și locuri de muncă</h2><div class="stats" style="padding:0;grid-template-columns:repeat(3,1fr)"><div class="stat">Angajați<b id="employed">0</b></div><div class="stat">Șomeri<b id="unemployed">0</b></div><div class="stat">Vehicule<b id="cars">0</b></div></div><div class="feed" id="citizens" style="height:135px"></div></section><section><h2>🧠 Jurnalul civilizației</h2><div class="feed" id="feed"></div></section><footer>Simulare autonomă offline bazată pe reguli, nu pe modele AI externe. Evoluează cât timp pagina este deschisă. Progresul se salvează local.</footer>
 <script>
 const canvas=document.getElementById('city'),ctx=canvas.getContext('2d'),W=12,H=12,TW=50,TH=26;
 const types={house:['#5ba8db',25000,'locuință'],farm:['#7ac46b',18000,'fermă'],factory:['#c38c65',60000,'fabrică'],school:['#e5bd61',65000,'școală'],power:['#da7777',85000,'centrală'],lab:['#ad8de9',120000,'laborator']};
@@ -29,8 +29,37 @@ if(s.day%15===0&&n('lab')){s.tech+=n('lab')*2;note('Cercetătorii dezvoltă tehn
 if(s.day%30===0)note('Raport: '+s.pop+' locuitori, '+Math.min(s.pop,jobs)+' angajați.');
 if(s.day%5===0)save();render()}
 function poly(a,color){ctx.beginPath();ctx.moveTo(...a[0]);for(let i=1;i<a.length;i++)ctx.lineTo(...a[i]);ctx.closePath();ctx.fillStyle=color;ctx.fill();ctx.strokeStyle='#25463a';ctx.stroke()}
-function render(){ctx.clearRect(0,0,720,550);for(let sum=0;sum<W+H-1;sum++)for(let y=0;y<H;y++){let x=sum-y;if(x<0||x>=W)continue;let px=360+(x-y)*TW/2,py=75+(x+y)*TH/2;poly([[px,py],[px+TW/2,py+TH/2],[px,py+TH],[px-TW/2,py+TH/2]],(x+y)%2?'#365d4d':'#416a56');let b=s.buildings.find(v=>v.x===x&&v.y===y);if(!b)continue;let ht=b.type==='lab'?52:b.type==='factory'?40:28,color=types[b.type][0];poly([[px-18,py+12],[px,py+21],[px,py+21-ht],[px-18,py+12-ht]],color);poly([[px,py+21],[px+18,py+12],[px+18,py+12-ht],[px,py+21-ht]],'#37576c');poly([[px-18,py+12-ht],[px,py+21-ht],[px+18,py+12-ht],[px,py+3-ht]],'#d5d9c1')}
-document.getElementById('pop').textContent=s.pop;document.getElementById('money').textContent=Math.round(s.money/1000)+'k';document.getElementById('count').textContent=s.buildings.length;document.getElementById('date').textContent=s.year+' / '+s.day;document.getElementById('feed').replaceChildren(...s.log.map(v=>{let d=document.createElement('div');d.textContent=v;return d}))}
+// V2: individual persistent citizens with work assignments and daily commutes.
+const firstNames=['Ana','Mihai','Daria','Victor','Elena','Radu','Sofia','Alex','Ioana','Matei'];
+const surnames=['Popescu','Marin','Dumitrescu','Ionescu','Stan','Radu'];
+const jobTypes={farm:'Agricultor',factory:'Muncitor',school:'Profesor',power:'Electrician',lab:'Cercetător'};
+const jobCapacity={farm:16,factory:24,school:12,power:8,lab:10};
+function ensureCitizens(){
+ if(!Array.isArray(s.citizens))s.citizens=[];
+ while(s.citizens.length<s.pop){let i=s.citizens.length;s.citizens.push({id:i,name:firstNames[i%firstNames.length]+' '+surnames[Math.floor(i/firstNames.length)%surnames.length],age:18+(i*13)%48,car:i%4===0,home:i%n('house'),job:null,phase:(i*17)%100/100})}
+ if(s.citizens.length>s.pop)s.citizens.length=s.pop;
+ let slots=[];for(let b of s.buildings){let cap=jobCapacity[b.type]||0;for(let i=0;i<cap;i++)slots.push(b.type)}
+ for(let i=0;i<s.citizens.length;i++){let a=s.citizens[i];a.job=slots[i]||null;a.home=i%Math.max(1,n('house'))}
+}
+function drawAgents(){
+ let houses=s.buildings.filter(b=>b.type==='house'), workplaces=s.buildings.filter(b=>jobCapacity[b.type]);
+ if(!houses.length)return;
+ const t=(s.day%24)/24;
+ for(let a of s.citizens.slice(0,120)){
+ let home=houses[a.home%houses.length],work=a.job?workplaces[(a.id*7)%Math.max(1,workplaces.length)]:home;
+ let atWork=a.job&&t>.25&&t<.75,commute=a.job&&(t>.18&&t<.3||t>.7&&t<.82);
+ let frac=atWork?1:commute?(t<.3?(t-.18)/.12:1-(t-.7)/.12):0;
+ frac=Math.max(0,Math.min(1,frac));
+ let x=home.x+(work.x-home.x)*frac,y=home.y+(work.y-home.y)*frac;
+ x+=(a.id%5-2)*.12;y+=(Math.floor(a.id/5)%5-2)*.12;
+ let px=360+(x-y)*TW/2,py=75+(x+y)*TH/2+13;
+ ctx.beginPath();ctx.arc(px,py,a.car&&commute?4:2.5,0,Math.PI*2);ctx.fillStyle=a.car&&commute?'#ffcf54':a.job?'#f3f5f7':'#ff879a';ctx.fill();
+ }
+}
+function render(){ensureCitizens();ctx.clearRect(0,0,720,550);for(let sum=0;sum<W+H-1;sum++)for(let y=0;y<H;y++){let x=sum-y;if(x<0||x>=W)continue;let px=360+(x-y)*TW/2,py=75+(x+y)*TH/2;poly([[px,py],[px+TW/2,py+TH/2],[px,py+TH],[px-TW/2,py+TH/2]],(x+y)%2?'#365d4d':'#416a56');let b=s.buildings.find(v=>v.x===x&&v.y===y);if(!b)continue;let ht=b.type==='lab'?52:b.type==='factory'?40:28,color=types[b.type][0];poly([[px-18,py+12],[px,py+21],[px,py+21-ht],[px-18,py+12-ht]],color);poly([[px,py+21],[px+18,py+12],[px+18,py+12-ht],[px,py+21-ht]],'#37576c');poly([[px-18,py+12-ht],[px,py+21-ht],[px+18,py+12-ht],[px,py+3-ht]],'#d5d9c1')}
+drawAgents();document.getElementById('pop').textContent=s.pop;document.getElementById('money').textContent=Math.round(s.money/1000)+'k';document.getElementById('count').textContent=s.buildings.length;document.getElementById('date').textContent=s.year+' / '+s.day;let employed=s.citizens.filter(a=>a.job).length;document.getElementById('employed').textContent=employed;document.getElementById('unemployed').textContent=s.pop-employed;document.getElementById('cars').textContent=s.citizens.filter(a=>a.car).length;
+document.getElementById('citizens').replaceChildren(...s.citizens.slice(0,12).map(a=>{let d=document.createElement('div');d.textContent=(a.car?'🚗 ':'🚶 ')+a.name+' — '+(jobTypes[a.job]||'În căutarea unui job');return d}));
+document.getElementById('feed').replaceChildren(...s.log.map(v=>{let d=document.createElement('div');d.textContent=v;return d}))}
 document.getElementById('pause').onclick=()=>{paused=!paused;document.getElementById('pause').textContent=paused?'Continuă':'Pauză';document.getElementById('status').textContent=paused?'Ⅱ PAUZĂ':'● LIVE'};
 document.getElementById('speed').onclick=()=>{speed=speed===1?3:speed===3?10:1;document.getElementById('speed').textContent='Viteză ×'+speed};
 document.getElementById('save').onclick=()=>{note('Lumea a fost salvată.');save();render()};
