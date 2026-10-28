@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101820"><title>AI Civilization</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#0b151d;color:#f5f7fa;font:14px system-ui}header{padding:15px;background:#162630;display:flex;justify-content:space-between;align-items:center}h1{font-size:20px;margin:0}small{color:#9cb0bd}.live{color:#8df1b3}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:10px}.stat{background:#1b2e3b;border-radius:10px;padding:10px 4px;text-align:center;font-size:11px}.stat b{display:block;color:#ffd35b;font-size:17px}canvas{display:block;width:100%;max-height:65vh;object-fit:contain;background:#20363b}.controls{display:flex;gap:7px;padding:10px}.controls button{flex:1;border:0;border-radius:9px;padding:12px 4px;background:#f6cb4b;color:#16212b;font-weight:700}.controls button:nth-child(n+2){background:#2b4050;color:#fff}section{padding:10px 14px}h2{font-size:16px}.feed{height:165px;overflow:auto;background:#142530;padding:10px;border-radius:12px;font-size:12px;line-height:1.8}.feed div{border-bottom:1px solid #2a3e48}footer{color:#8ea5b3;font-size:11px;padding:12px}</style></head>
+<body><header><div><h1>AI CIVILIZATION <span style="color:#ffd35b">V1</span></h1><small>Autonomous Living City</small></div><strong class="live" id="status">● LIVE</strong></header>
+<div class="stats"><div class="stat">Locuitori<b id="pop">100</b></div><div class="stat">Buget<b id="money">1000k</b></div><div class="stat">Clădiri<b id="count">2</b></div><div class="stat">An / Zi<b id="date">1 / 1</b></div></div>
+<canvas id="city" width="720" height="550"></canvas>
+<div class="controls"><button id="pause">Pauză</button><button id="speed">Viteză ×1</button><button id="save">Salvează</button><button id="reset">Reset</button></div>
+<section><h2>🧠 Jurnalul civilizației</h2><div class="feed" id="feed"></div></section><footer>Simulare autonomă offline bazată pe reguli, nu pe modele AI externe. Evoluează cât timp pagina este deschisă. Progresul se salvează local.</footer>
+<script>
+const canvas=document.getElementById('city'),ctx=canvas.getContext('2d'),W=12,H=12,TW=50,TH=26;
+const types={house:['#5ba8db',25000,'locuință'],farm:['#7ac46b',18000,'fermă'],factory:['#c38c65',60000,'fabrică'],school:['#e5bd61',65000,'școală'],power:['#da7777',85000,'centrală'],lab:['#ad8de9',120000,'laborator']};
+const fresh=()=>({day:1,year:1,pop:100,money:1000000,tech:0,mayor:'Alex Ionescu',seed:1729,buildings:[{x:5,y:5,type:'house'},{x:6,y:5,type:'farm'}],log:[]});
+let s;try{s=JSON.parse(localStorage.getItem('aiciv-save'))||fresh();if(!Array.isArray(s.buildings))throw Error()}catch(e){s=fresh()}
+let paused=false,speed=1;
+function rnd(){s.seed=(Math.imul(s.seed,1664525)+1013904223)>>>0;return s.seed/4294967296}
+function note(v){s.log.unshift('Ziua '+s.day+', anul '+s.year+': '+v);s.log=s.log.slice(0,70)}
+if(!s.log.length)note('Primarul '+s.mayor+' începe dezvoltarea orașului.');
+function n(t){return s.buildings.filter(b=>b.type===t).length}
+function build(){let target=s.pop>n('house')*35?'house':s.pop>n('farm')*60?'farm':n('school')*100<s.pop?'school':n('power')*3<n('factory')+n('lab')?'power':n('lab')<Math.max(1,Math.floor(s.year/2))?'lab':rnd()<.65?'factory':'house';
+const choices=[];for(let y=0;y<H;y++)for(let x=0;x<W;x++){if(s.buildings.some(b=>b.x===x&&b.y===y))continue;let d=Math.min(...s.buildings.map(b=>Math.abs(b.x-x)+Math.abs(b.y-y)));if(d<=2)choices.push({x,y,d})}
+choices.sort((a,b)=>a.d-b.d||a.y-b.y||a.x-b.x);if(!choices.length)return;
+let p=choices[Math.floor(rnd()*Math.min(choices.length,15))];if(s.money>=types[target][1]){s.money-=types[target][1];s.buildings.push({x:p.x,y:p.y,type:target});note('Constructorii au ridicat o '+types[target][2]+'.')}else if(rnd()<.2)note('Primarul amână construcția: buget insuficient.')}
+function save(){try{localStorage.setItem('aiciv-save',JSON.stringify(s))}catch(e){}}
+function tick(){s.day++;if(s.day>120){s.day=1;s.year++;note('Începe anul '+s.year+'.');if(s.year>1&&s.year%4===1){let names=['Mara Popescu','Andrei Marin','Sofia Radu','Victor Pavel'];s.mayor=names[Math.floor(rnd()*names.length)];note('Alegeri: '+s.mayor+' devine primar.')}}
+let jobs=n('farm')*16+n('factory')*24+n('lab')*10+n('school')*12+n('power')*8;s.money+=Math.round(Math.min(s.pop,jobs)*12-s.pop*3-s.buildings.length*30);
+if(s.day%6===0){let cap=Math.min(n('house')*35,n('farm')*60);s.pop=Math.max(10,s.pop+Math.max(-4,Math.min(5,Math.round((cap-s.pop)*.06))))}
+if(s.day%9===0)build();
+if(s.day%15===0&&n('lab')){s.tech+=n('lab')*2;note('Cercetătorii dezvoltă tehnologii. Nivel '+s.tech+'.')}
+if(s.day%30===0)note('Raport: '+s.pop+' locuitori, '+Math.min(s.pop,jobs)+' angajați.');
+if(s.day%5===0)save();render()}
+function poly(a,color){ctx.beginPath();ctx.moveTo(...a[0]);for(let i=1;i<a.length;i++)ctx.lineTo(...a[i]);ctx.closePath();ctx.fillStyle=color;ctx.fill();ctx.strokeStyle='#25463a';ctx.stroke()}
+function render(){ctx.clearRect(0,0,720,550);for(let sum=0;sum<W+H-1;sum++)for(let y=0;y<H;y++){let x=sum-y;if(x<0||x>=W)continue;let px=360+(x-y)*TW/2,py=75+(x+y)*TH/2;poly([[px,py],[px+TW/2,py+TH/2],[px,py+TH],[px-TW/2,py+TH/2]],(x+y)%2?'#365d4d':'#416a56');let b=s.buildings.find(v=>v.x===x&&v.y===y);if(!b)continue;let ht=b.type==='lab'?52:b.type==='factory'?40:28,color=types[b.type][0];poly([[px-18,py+12],[px,py+21],[px,py+21-ht],[px-18,py+12-ht]],color);poly([[px,py+21],[px+18,py+12],[px+18,py+12-ht],[px,py+21-ht]],'#37576c');poly([[px-18,py+12-ht],[px,py+21-ht],[px+18,py+12-ht],[px,py+3-ht]],'#d5d9c1')}
+document.getElementById('pop').textContent=s.pop;document.getElementById('money').textContent=Math.round(s.money/1000)+'k';document.getElementById('count').textContent=s.buildings.length;document.getElementById('date').textContent=s.year+' / '+s.day;document.getElementById('feed').replaceChildren(...s.log.map(v=>{let d=document.createElement('div');d.textContent=v;return d}))}
+document.getElementById('pause').onclick=()=>{paused=!paused;document.getElementById('pause').textContent=paused?'Continuă':'Pauză';document.getElementById('status').textContent=paused?'Ⅱ PAUZĂ':'● LIVE'};
+document.getElementById('speed').onclick=()=>{speed=speed===1?3:speed===3?10:1;document.getElementById('speed').textContent='Viteză ×'+speed};
+document.getElementById('save').onclick=()=>{note('Lumea a fost salvată.');save();render()};
+document.getElementById('reset').onclick=()=>{if(confirm('Resetezi civilizația?')){s=fresh();note('O civilizație nouă a început.');save();render()}};
+setInterval(()=>{if(!paused)for(let i=0;i<speed;i++)tick()},1000);render();
+</script></body></html>
