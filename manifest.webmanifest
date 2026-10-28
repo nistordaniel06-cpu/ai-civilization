@@ -6,5 +6,13 @@
   "display": "standalone",
   "background_color": "#0b151d",
   "theme_color": "#101820",
-  "description": "Simulare autonomă de civilizație, cu Governor OS și progres local."
+  "description": "Simulare autonomă de civilizație, cu Governor OS și progres local.",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
 }
