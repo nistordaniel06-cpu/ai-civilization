@@ -1,0 +1,10 @@
+{
+  "name": "AI Civilization — Autonomous Living City",
+  "short_name": "AI Civilization",
+  "start_url": "./?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b151d",
+  "theme_color": "#101820",
+  "description": "Simulare autonomă de civilizație, cu Governor OS și progres local."
+}
