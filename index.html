@@ -111,7 +111,7 @@ document.getElementById('governor-toggle').onclick=()=>{let p=document.getElemen
 document.querySelectorAll('[data-policy]').forEach(b=>b.onclick=()=>{ensureGovernment().policy=b.dataset.policy;governorAction('Politică: '+b.textContent.trim())});
 document.getElementById('gov-tax-minus').onclick=()=>{let g=ensureGovernment();g.tax=Math.max(0,g.tax-1);governorAction('Taxa a fost redusă la '+g.tax)};
 document.getElementById('gov-tax-plus').onclick=()=>{let g=ensureGovernment();g.tax=Math.min(15,g.tax+1);governorAction('Taxa a fost crescută la '+g.tax)};
-document.getElementById('gov-grant').onclick=()=>{if(s.money<10000){document.getElementById('gov-result').textContent='Buget insuficient pentru investiție.';return}s.money-=10000;s.money+=5000;ensureGovernment().investment+=10000;governorAction('Investiție publică de 10k aprobată; 5k reintra gradual în economie (efect simplificat)')};
+document.getElementById('gov-grant').onclick=()=>{if(s.money<10000){document.getElementById('gov-result').textContent='Buget insuficient pentru investiție.';return}s.money-=10000;ensureGovernment().investment+=10000;s.tech+=1;governorAction('Investiție publică de 10k aprobată; nivel tehnologic +1 (efect simplificat)')};
 document.getElementById('pause').onclick=()=>{paused=!paused;document.getElementById('pause').textContent=paused?'Continuă':'Pauză';document.getElementById('status').textContent=paused?'Ⅱ PAUZĂ':'● LIVE'};
 document.getElementById('speed').onclick=()=>{speed=speed===1?3:speed===3?10:1;document.getElementById('speed').textContent='Viteză ×'+speed};
 document.getElementById('save').onclick=()=>{note('Lumea a fost salvată.');save();render()};
